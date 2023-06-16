@@ -61,6 +61,18 @@ userSchema.methods.generateAuthToken = async function () {
     return token
 }
 
+// Method accessed on one instance of the model.
+userSchema.methods.toJSON = function () {
+
+    const user = this
+    const userObject = user.toObject()
+
+    delete userObject.password
+    delete userObject.tokens
+
+    return userObject
+}
+
 // Method accessed on the model itself (remember static on OO).
 userSchema.statics.findByCredentials = async (email, password) => {
 
