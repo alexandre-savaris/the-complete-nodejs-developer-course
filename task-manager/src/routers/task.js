@@ -20,6 +20,9 @@ router.post('/tasks', auth, async (req, res) => {
 
 router.get('/tasks', auth, async (req, res) => {
 
+    const match = {}
+    const sort = {}
+
     try {
 
         // First way.
@@ -27,7 +30,28 @@ router.get('/tasks', auth, async (req, res) => {
         // res.send(tasks)
 
         // Second way.
-        await req.user.populate('tasks').execPopulate()
+        // await req.user.populate('tasks').execPopulate()
+        // res.send(req.user.tasks)
+
+        if (req.query.completed) {
+            match.completed = req.query.completed === 'true' // Assigns the boolean true in case a string 'true' is received. Otherwise, false.
+        }
+
+        if (req.query.sortBy) {
+            const parts = req.query.sortBy.split(':')
+            sort[parts[0]] = parts[1] === 'desc' ? -1 : 1
+        }
+
+        // Second way.
+        await req.user.populate({
+            path: 'tasks',
+            match,
+            options: {
+                limit: parseInt(req.query.limit), // Mongoose takes care of a non-integer or an absent value.
+                skip: parseInt(req.query.skip), // Mongoose takes care of a non-integer or an absent value.
+                sort
+            }
+        }).execPopulate()
         res.send(req.user.tasks)
 
     } catch(e) {
