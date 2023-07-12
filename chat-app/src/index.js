@@ -2,6 +2,7 @@ const path = require('path')
 const http = require('http')
 const express = require('express')
 const socketio = require('socket.io')
+const Filter = require('bad-words')
 
 const port = process.env.PORT || 3000
 
@@ -16,18 +17,35 @@ const publicDirectoryPath = path.join(__dirname, '../public')
 // Setup static directory to serve
 app.use(express.static(publicDirectoryPath))
 
-let count = 0
+// let count = 0
 
 io.on('connection', (socket) => {
 
     console.log('New WebSocket connection!')
 
-    socket.emit('countUpdated', count)
+    socket.emit('message', 'Welcome!')
+    socket.broadcast.emit('message', 'A new user has joined!')
 
-    socket.on('increment', () => {
+    socket.on('sendMessage', (message, callback) => {
 
-        count++
-        io.emit('countUpdated', count)
+        const filter = new Filter()
+        if (filter.isProfane(message)) {
+            return callback('Profanity is not allowed!')
+        }
+
+        io.emit('message', message)
+        callback()
+    })
+
+    socket.on('sendLocation', (coords, callback) => {
+
+        io.emit('locationMessage', `https://google.com/maps?q=${coords.latitude},${coords.longitude}`)
+        callback('Location shared!')
+    })
+
+    socket.on('disconnect', () => {
+
+        io.emit('message', 'A user has left!')
     })
 })
 
